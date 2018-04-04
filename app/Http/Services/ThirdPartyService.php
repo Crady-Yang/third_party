@@ -23,10 +23,14 @@ class ThirdPartyService
         'twitter'
     ];
 
-    //第三方请求的源地址
+    /**
+     * 第三方请求的源地址
+     */
     protected $redirect_callback_uri = null;
 
-    //回源地址需要的参数
+    /**
+     * 回源地址需要的参数
+     */
     protected $return_params = [];
 
     /**
@@ -37,7 +41,19 @@ class ThirdPartyService
     /**
      * 第三方用户信息
      */
-    public $providerUser = null;
+    protected $providerUser = null;
+
+    /**
+     * 回调url白名单
+     */
+    protected $whiteUrlConfig = [];
+
+
+    public function __construct()
+    {
+        //初始化白名单
+        $this->whiteUrlConfig = config('config.third_url_white_list',[]);
+    }
 
     /**
      * 验证第三方ID是否存在
@@ -73,17 +89,13 @@ class ThirdPartyService
      * 第三方授权回调获取用户信息
      * @return bool
      */
-    public function thirdOauthUser($type)
+    public function thirdOauthUser()
     {
-        if(!$this->comfirmOauthType($type)){
+        try{
+            $this->providerUser = Socialite::driver($this->oauth_type)->user();
+            return true;
+        }catch(\Exception $e){
             return false;
-        }else{
-            try{
-                $this->providerUser = Socialite::driver($this->oauth_type)->user();
-                return true;
-            }catch(\Exception $e){
-                return false;
-            }
         }
     }
 
@@ -136,115 +148,193 @@ class ThirdPartyService
      * 第三方授权跳转
      * @return mixed
      */
-    public function thirdOauthRedirect($type,$referer)
+    public function thirdOauthRedirect(string $type, string $referer)
     {
-        return call_user_func_array([$this,$type.'Third'],[$type,$referer]);
-    }
-
-    //google第三方介入
-    public function googleThird($type,$referer)
-    {
-//        $referer = array_get($_SERVER,'HTTP_REFERER','dd.default.com');//可将默认地址配置
-        if(!$this->comfirmOauthType($type)){
+        /**
+         * 第三方类型
+         * 触发回调源地址白名单
+         * url合法
+         */
+        if(
+            !$this->comfirmOauthType($type)
+            || $this->isWhiteUrl($referer)
+            || $this->isValidUrl($referer)
+        ){
             return false;
         }else{
-            return Socialite::driver($this->oauth_type)->redirect($referer);
+            return call_user_func_array([$this,$type.'Third'],[$this->formatHttpUrl($referer)]);
         }
     }
 
-    //facebook第三方介入
-    public function facebookThird($type,$referer)
+    /**
+     * 回调地址白名单验证
+     * @param $url
+     * @return bool
+     */
+    protected function isWhiteUrl($url)
     {
-//        $referer = array_get($_SERVER,'HTTP_REFERER','dd.default.com');//可将默认地址配置
-        if(!$this->comfirmOauthType($type)){
-            return false;
-        }else{
-            return Socialite::driver($this->oauth_type)->redirect($referer);
+        //开发环境 白名单不做验证
+        if( !strtolower(env('APP_ENV','dev')) === 'production' ){
+            return true;
         }
+
+        if( in_array($url,$this->whiteUrlConfig) ){
+            return true;
+        }
+        return false;
     }
 
-    //twitter第三方介入
-    public function twitterThird($type,$referer)
+    /**
+     * google第三方接入
+     * @param $referer
+     * @return mixed
+     */
+    protected function googleThird($referer)
     {
+        return Socialite::driver($this->oauth_type)->redirect($referer);
+    }
+
+    /**
+     * facebook第三方接入
+     * @param $referer
+     * @return mixed
+     */
+    protected function facebookThird($referer)
+    {
+        return Socialite::driver($this->oauth_type)->redirect($referer);
+    }
+
+    /**
+     * twitter第三方接入
+     * @param $referer
+     * @return mixed
+     */
+    protected function twitterThird($referer)
+    {
+        return Socialite::driver($this->oauth_type)->redirect($referer);
 //        $referer = array_get($_SERVER,'HTTP_REFERER','dd.default.com');//可将默认地址配置
-        $params = http_build_query(['state'=>$referer]);
-        $redirect_url = config('services.twitter.redirect');
-        if(strpos($redirect_url,'?')){
-            $redirect_url = substr($redirect_url,0,strpos($redirect_url,'?'));
-        }
+//        $params = http_build_query(['state'=>$referer]);
+//        $redirect_url = config('services.twitter.redirect');
+//        if(strpos($redirect_url,'?')){
+//            $redirect_url = substr($redirect_url,0,strpos($redirect_url,'?'));
+//        }
 //        config()->set('services.twitter.redirect',$redirect_url.'?'.$params);
 //        dd(config('services.twitter.redirect'));
-        if(!$this->comfirmOauthType($type)){
+    }
+
+    /**
+     * 第三方回调服务
+     * @param $type
+     * @param $params
+     * @return mixed
+     */
+    public function thirdCallback($type,$params)
+    {
+        if( !$this->comfirmOauthType($type) ){
             return false;
-        }else{
-            return Socialite::driver($this->oauth_type)->redirect($referer);
+        }else {
+            return call_user_func_array([$this, $type . 'Callback'], $params);
         }
     }
 
-    //第三方回调服务
-    public function thirdCallback($type,$params)
+    /**
+     * google回调
+     * @param $url
+     * @return bool
+     */
+    protected function googleCallback($url)
     {
-//        dd($params,'aaa');
-        return call_user_func_array([$this,$type.'Callback'],$params);
-    }
-
-    //google回调
-    public function googleCallback($params)
-    {
-        $user = $this->thirdOauthUser('google');
+        $user = $this->thirdOauthUser();
+        $this->sourceCallback($url);
         if(!$user){
             return false;
         }
+
         $email = $this->getUserEmail();
         $id = $this->getUserId();
+
         $provider_id = $this->isExistProviderId($id);
         if(!$provider_id){
             $provider_id = $this->addThirdParty('google',$email,$id);
         }
-//        dd('geeee',$params,$state);
-        return $this->returnCallback(['email'=>$email,'provider_id'=>$provider_id,'state'=>$params]);
+
+        return $this->returnCallback(['email'=>$email,'provider_id'=>$provider_id]);
     }
 
-    //google回调
-    public function facebookCallback($params)
+    /**
+     * facebook回调
+     * @param $params
+     * @return bool
+     */
+    protected function facebookCallback($url)
     {
-        $user = $this->thirdOauthUser('facebook');
+        $user = $this->thirdOauthUser();
+        $this->sourceCallback($url);
+
         if(!$user){
             return false;
         }
+
         $email = $this->getUserEmail();
         $id = $this->getUserId();
+
         $provider_id = $this->isExistProviderId($id);
         if(!$provider_id){
             $provider_id = $this->addThirdParty('facebook',$email,$id);
         }
-        return $this->returnCallback(['email'=>$email,'provider_id'=>$provider_id,'state'=>$params]);
+
+        return $this->returnCallback(['email'=>$email,'provider_id'=>$provider_id]);
     }
 
-    //twitter回调
-    public function twitterCallback($params=[])
+    /**
+     * twitter回调
+     * @param $params
+     * @return bool
+     */
+    protected function twitterCallback($url)
     {
-        $user = $this->thirdOauthUser('twitter');
+        $user = $this->thirdOauthUser();
+        $this->sourceTwitterCallback($url);
+
         if(!$user){
             return false;
         }
+
         $email = $this->getUserEmail();
         $id = $this->getUserId();
+
         $provider_id = $this->isExistProviderId($id);
         if(!$provider_id){
             $provider_id = $this->addThirdParty('twitter',$email,$id);
         }
-        return $this->returnTwitterCallback(['email'=>$email,'provider_id'=>$provider_id,'state'=>$params]);
+
+        return $this->returnCallback(['email'=>$email,'provider_id'=>$provider_id]);
+    }
+
+    /**
+     * 源地址获取
+     * @param $params
+     */
+    protected function sourceCallback($url)
+    {
+        $this->redirect_callback_uri = $this->formatHttpUrl($url);
+    }
+
+    /**
+     * twitter授权前地址
+     * @param $params
+     */
+    protected function sourceTwitterCallback($url)
+    {
+        $this->redirect_callback_uri;
+        $redirect_url = $this->getUrlParams($url,'path');
+
+        $this->redirect_callback_uri = $this->formatHttpUrl($this->removeUrlParams($redirect_url));
     }
 
     //回调返回参数
     public function returnCallback($params)
     {
-        \Log::info('params',$params);
-        $this->redirect_callback_uri = $this->formatHttpUrl($params['state']);
-        \Log::info('state',$params);
-        \Log::info('url',[$this->redirect_callback_uri]);
-        unset($params['state']);
         $params['auth_code'] = 1;
         if(empty($params['email'])){
             unset($params['email']);
@@ -253,46 +343,41 @@ class ThirdPartyService
         return true;
     }
 
-    public function returnTwitterCallback($params)
+    /**
+     * 失败信息url及错误码
+     * @param $url
+     * @return array
+     */
+    public function returnFalse()
     {
-        \Log::info('params',$params);
-        $this->redirect_callback_uri = $params['state'];
-        \Log::info('state',$params);
-        $this->redirect_callback_uri = $this->getTwitterRedictCallbackUri();
-        \Log::info('url',[$this->redirect_callback_uri]);
-        unset($params['state']);
-        $params['auth_code'] = 1;
-        if(empty($params['email'])){
-            unset($params['email']);
-        }
-        $this->return_params = $params;
-        return true;
+        return ['auth_code'=>'101006001'];
+//        return ['url'=>$this->formatHttpUrl($url),'params'=>['auth_code'=>'101006001']];
     }
 
-    public function returnFalse($url)
-    {
-        return ['url'=>$this->formatHttpUrl($url),'params'=>['auth_code'=>'101006001']];
-    }
-
+    /**
+     * 源地址
+     * @return null
+     */
     public function getRedirectCallbackUri()
     {
         return $this->redirect_callback_uri;
     }
 
+    /**
+     * 源地址所需参数
+     * @return array
+     */
     public function getReturnParams()
     {
         return $this->return_params;
     }
 
-    public function getTwitterRedictCallbackUri()
-    {
-        $redirect_url = $this->getUrlParams($this->redirect_callback_uri,'path');
-        if(strpos($redirect_url,'?')){
-            $redirect_url =  substr($redirect_url,0,strpos($redirect_url,'?'));
-        }
-        return $this->formatHttpUrl($redirect_url);
-    }
-
+    /**
+     * 获取url参数
+     * @param $url
+     * @param $key
+     * @return mixed|string
+     */
     protected function getUrlParams($url,$key)
     {
         $parse_url = parse_url($url);
@@ -312,12 +397,41 @@ class ThirdPartyService
         return $params[$key];
     }
 
-    public function formatHttpUrl($url)
+    /**
+     * http头格式化
+     * @param $url
+     * @return string
+     */
+    protected function formatHttpUrl($url)
     {
         $url_params = parse_url($url);
         if(!array_key_exists('scheme',$url_params)){
             return 'http://'.$url;
         }
         return $url;
+    }
+
+    /**
+     * 去除url后参数
+     * @param $url
+     * @return string
+     */
+    protected function removeUrlParams($url)
+    {
+        if(strpos($url,'?')){
+            return substr($url,0,strpos($url,'?'));
+        }else{
+            return $url;
+        }
+    }
+
+    //url合法校验
+    public function isValidUrl($path)
+    {
+        if (! preg_match('~^(#|//|https?://|mailto:|tel:)~', $path)) {
+            return filter_var($path, FILTER_VALIDATE_URL) !== false;
+        }
+
+        return true;
     }
 }

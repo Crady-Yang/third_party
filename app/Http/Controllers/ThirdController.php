@@ -15,7 +15,7 @@ class ThirdController extends Controller
      */
     public function thirdLogin(Request $request, ThirdPartyService $partyService)
     {
-        $type = $request->input('type','');
+        $type = $request->input('type');
         $path = $request->input('path');
 
         // url白名单
@@ -32,16 +32,16 @@ class ThirdController extends Controller
      */
     public function twitterCallback(Request $request, ThirdPartyService $service)
     {
-        $referer = array_get($request->session()->get('_previous'),'url');
+        $state = array_get($request->session()->get('_previous'),'url');
+        $return = $service->thirdCallback('twitter',['state'=> $state]);
 
-        $return = $service->thirdCallback('twitter',['state'=> $referer]);
-        if(!$return){
-            $url_arr = $service->returnFalse($referer);
-            return redirect($url_arr['url'].'?'.http_build_query($url_arr['params']));
-        }
         $url = $service->getRedirectCallbackUri();
-        $return = $service->getReturnParams();
-        return redirect($url.'?'.http_build_query($return));
+
+        if(!$return){
+            return redirect($url.'?'.http_build_query($service->returnFalse()));
+        }
+        $returnParams = $service->getReturnParams();
+        return redirect($url.'?'.http_build_query($returnParams));
     }
 
     /**
@@ -55,14 +55,14 @@ class ThirdController extends Controller
         $state = $request->input('state');
         $return = $service->thirdCallback('facebook',['state'=>$state]);
 
+        $url = $service->getRedirectCallbackUri();
+
         if(!$return){
-            $url_arr = $service->returnFalse($state);
-            return redirect($url_arr['url'].'?'.http_build_query($url_arr['params']));
+            return redirect($url.'?'.http_build_query($service->returnFalse()));
         }
 
-        $url = $service->getRedirectCallbackUri();
-        $return = $service->getReturnParams();
-        return redirect($url.'?'.http_build_query($return));
+        $returnParams = $service->getReturnParams();
+        return redirect($url.'?'.http_build_query($returnParams));
     }
 
     /**
@@ -74,15 +74,15 @@ class ThirdController extends Controller
     public function googleCallback(Request $request, ThirdPartyService $service)
     {
         $state = $request->input('state');
-        $return = $service->thirdCallback('google',['state'=>$request->input('state')]);
-
-        if(!$return){
-            $url_arr = $service->returnFalse($state);
-            return redirect($url_arr['url'].'?'.http_build_query($url_arr['params']));
-        }
+        $return = $service->thirdCallback('google',['state' => $state]);
 
         $url = $service->getRedirectCallbackUri();
-        $return = $service->getReturnParams();
-        return redirect($url.'?'.http_build_query($return));
+
+        if(!$return){
+            return redirect($url.'?'.http_build_query($service->returnFalse()));
+        }
+
+        $returnParams = $service->getReturnParams();
+        return redirect($url.'?'.http_build_query($returnParams));
     }
 }
