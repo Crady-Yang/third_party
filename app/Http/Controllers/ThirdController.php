@@ -15,10 +15,11 @@ class ThirdController extends Controller
      */
     public function thirdLogin(Request $request, ThirdPartyService $partyService)
     {
-        $tw = config('services.twitter');
-        dd($tw);
         $type = $request->input('type','');
         $path = $request->input('path');
+
+        // url白名单
+        // type 验证
 
         return $partyService->thirdOauthRedirect($type,$path);
     }
