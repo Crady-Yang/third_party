@@ -15,6 +15,8 @@ class ThirdController extends Controller
      */
     public function thirdLogin(Request $request, ThirdPartyService $partyService)
     {
+        $tw = config('services.twitter');
+        dd($tw);
         $type = $request->input('type','');
         $path = $request->input('path');
 
