@@ -152,6 +152,13 @@ class ThirdPartyService
     public function thirdOauthRedirect(string $type, string $referer)
     {
         $referer = $this->removeUrlParams($referer);
+        \Log::info('thirdOauthRedirect',[
+            $type,
+            $referer,
+            'comfirmOauthType'=>$this->comfirmOauthType($type),
+            'isWhiteUrl'=>$this->isWhiteUrl($referer),
+            'isValidUrl'=>$this->isValidUrl($referer),
+        ]);
         /**
          * 第三方类型
          * 触发回调源地址白名单
