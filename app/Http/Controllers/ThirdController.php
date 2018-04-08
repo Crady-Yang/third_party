@@ -16,8 +16,8 @@ class ThirdController extends Controller
     public function thirdLogin(Request $request, ThirdPartyService $partyService)
     {
         $type = $request->input('type');
-//        $path = $request->input('path');
-        $path = $partyService->removeUrlParams(array_get($request->session()->get('_previous'),'url'));
+        $path = $request->input('path');
+//        $path = $partyService->removeUrlParams(array_get($request->session()->get('_previous'),'url'));
 
 
         // url白名单
