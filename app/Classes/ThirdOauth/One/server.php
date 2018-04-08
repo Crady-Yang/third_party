@@ -84,8 +84,9 @@ abstract class Server
         $header = $this->temporaryCredentialsProtocolHeader($uri);
         $authorizationHeader = array('Authorization' => $header);
         $headers = $this->buildHttpClientHeaders($authorizationHeader);
-        file_put_contents('/Users/crady_yang/work/onlinetest/1.log','oauth_tokenUrl：'.$uri.PHP_EOL,FILE_APPEND);
-        file_put_contents('/Users/crady_yang/work/onlinetest/1.log','getoauth_token：'.http_build_query($headers).PHP_EOL,FILE_APPEND);
+        \Log::info('step1-request_url',[$uri]);
+        \Log::info('step1-request_headers',[$headers]);
+        \Log::info('step1-start',[date('Y-m-d H:i:s')]);
         try {
             $response = $client->post($uri, [
                 'headers' => $headers
@@ -93,6 +94,10 @@ abstract class Server
         } catch (BadResponseException $e) {
             return $this->handleTemporaryCredentialsBadResponse($e);
         }
+
+        \Log::info('step1-end',[date('Y-m-d H:i:s')]);
+        \Log::info('step1-response_headers',[$response->getHeaders()]);
+        \Log::info('step1-response_bodys',[$response->getBody()]);
         return $this->createTemporaryCredentials((string) $response->getBody());
     }
 
@@ -160,8 +165,9 @@ abstract class Server
         $client = $this->createHttpClient();
 
         $headers = $this->getHeaders($temporaryCredentials, 'POST', $uri, $bodyParameters);
-        file_put_contents('/Users/crady_yang/work/onlinetest/1.log','getToken：'.$uri.PHP_EOL,FILE_APPEND);
-        file_put_contents('/Users/crady_yang/work/onlinetest/1.log','getToken：'.http_build_query($headers).PHP_EOL,FILE_APPEND);
+        \Log::info('step2-request_url',[$uri]);
+        \Log::info('step2-request_headers',[$headers]);
+        \Log::info('step2-start',[date('Y-m-d H:i:s')]);
         try {
             $response = $client->post($uri, [
                 'headers' => $headers,
@@ -171,6 +177,9 @@ abstract class Server
             return $this->handleTokenCredentialsBadResponse($e);
         }
 
+        \Log::info('step2-end',[date('Y-m-d H:i:s')]);
+        \Log::info('step2-response_headers',[$response->getHeaders()]);
+        \Log::info('step2-response_bodys',[$response->getBody()]);
         return $this->createTokenCredentials((string) $response->getBody());
     }
 
@@ -180,8 +189,9 @@ abstract class Server
      * @param TokenCredentials $tokenCredentials
      * @param bool             $force
      *
-     * @return \League\OAuth1\Client\Server\User
+     * @return \App\Classes\ThirdOauth\One\Server
      */
+    //* @return \League\OAuth1\Client\Server\User
     public function getUserDetails(TokenCredentials $tokenCredentials, $force = false)
     {
         $data = $this->fetchUserDetails($tokenCredentials, $force);
@@ -250,8 +260,9 @@ abstract class Server
             $client = $this->createHttpClient();
 
             $headers = $this->getHeaders($tokenCredentials, 'GET', $url);
-            file_put_contents('/Users/crady_yang/work/onlinetest/1.log','userUrl：'.$url.PHP_EOL,FILE_APPEND);
-            file_put_contents('/Users/crady_yang/work/onlinetest/1.log','user：'.http_build_query($headers).PHP_EOL,FILE_APPEND);
+            \Log::info('step3-request_url',[$url]);
+            \Log::info('step3-request_headers',[$headers]);
+            \Log::info('step3-start',[date('Y-m-d H:i:s')]);
             try {
                 $response = $client->get($url, [
                     'headers' => $headers,
@@ -265,6 +276,10 @@ abstract class Server
                     "Received error [$body] with status code [$statusCode] when retrieving token credentials."
                 );
             }
+
+            \Log::info('step3-end',[date('Y-m-d H:i:s')]);
+            \Log::info('step3-response_headers',[$response->getHeaders()]);
+            \Log::info('step3-response_bodys',[$response->getBody()]);
             switch ($this->responseType) {
                 case 'json':
                     $this->cachedUserDetailsResponse = json_decode((string) $response->getBody(), true);

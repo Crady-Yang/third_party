@@ -5,7 +5,8 @@ namespace App\Classes\ThirdOauth\One;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 use Illuminate\Http\RedirectResponse;
-use League\OAuth1\Client\Server\Server;
+//use League\OAuth1\Client\Server\Server;
+use App\Classes\ThirdOauth\One\Server;
 use League\OAuth1\Client\Credentials\TokenCredentials;
 use App\Classes\ThirdOauth\ThirdProvider as ProviderContract;
 
@@ -21,17 +22,19 @@ abstract class AbstractProvider implements ProviderContract
     /**
      * The OAuth server implementation.
      *
-     * @var \League\OAuth1\Client\Server\Server
+     * @var \App\Classes\ThirdOauth\One\Server
      */
+    //* @var \League\OAuth1\Client\Server\Server
     protected $server;
 
     /**
      * Create a new provider instance.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \League\OAuth1\Client\Server\Server  $server
+     * @param  \App\Classes\ThirdOauth\One\Server  $server
      * @return void
      */
+    //* @param  \League\OAuth1\Client\Server\Server  $server
     public function __construct(Request $request, Server $server)
     {
         $this->server = $server;

@@ -11,9 +11,7 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/','IndexController@index');
 
 Route::get('twitter/callback','ThirdController@twitterCallback');
 Route::get('google/callback','ThirdController@googleCallback');

@@ -17,7 +17,7 @@ class ThirdController extends Controller
     {
         $type = $request->input('type');
         $path = $request->input('path');
-
+        \Log::info('twitter-request-start',[date('Y-m-d H:i:s')]);
         // url白名单
         // type 验证
 

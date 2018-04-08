@@ -7,7 +7,8 @@ use Laravel\Socialite\SocialiteManager as Manager;
 use Illuminate\Support\Arr;
 use App\Classes\ThirdOauth\Two\FacebookProvider;
 use App\Classes\ThirdOauth\Two\GoogleProvider;
-use League\OAuth1\Client\Server\Twitter as TwitterServer;
+//use League\OAuth1\Client\Server\Twitter as TwitterServer;
+use App\Classes\ThirdOauth\One\Twitter as TwitterServer;
 use App\Classes\ThirdOauth\One\TwitterProvider;
 
 class SocialiteManager extends Manager
