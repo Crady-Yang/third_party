@@ -165,9 +165,9 @@ class ThirdPartyService
          * url合法
          */
         if(
-            $this->comfirmOauthType($type)
-            || $this->isWhiteUrl($referer)
-            || $this->isValidUrl($referer)
+            !$this->comfirmOauthType($type)
+            || !$this->isWhiteUrl($referer)
+            || !$this->isValidUrl($referer)
         ){
             return false;
         }else{
