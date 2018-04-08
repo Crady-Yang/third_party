@@ -430,6 +430,7 @@ class ThirdPartyService
     //url合法校验
     public function isValidUrl($path)
     {
+        dd('123');
         if (! preg_match('~^(#|//|https?://|mailto:|tel:)~', $path)) {
             return filter_var($path, FILTER_VALIDATE_URL) !== false;
         }
