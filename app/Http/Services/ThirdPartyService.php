@@ -222,7 +222,6 @@ class ThirdPartyService
      */
     protected function twitterThird($referer)
     {
-        dd($referer);
         return Socialite::driver($this->oauth_type)->redirect($referer);
 //        $referer = array_get($_SERVER,'HTTP_REFERER','dd.default.com');//可将默认地址配置
 //        $params = http_build_query(['state'=>$referer]);
