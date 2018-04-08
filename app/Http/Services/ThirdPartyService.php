@@ -441,7 +441,7 @@ class ThirdPartyService
     public function isValidUrl($path)
     {
         if (! preg_match('~^(#|//|https?://|mailto:|tel:)~', $path)) {
-            \Log::info('third_login_path_in',[filter_var($path, FILTER_VALIDATE_URL)]);
+            \Log::info('third_login_path_in',[$path,filter_var($path, FILTER_VALIDATE_URL)]);
             return filter_var($path, FILTER_VALIDATE_URL) !== false;
         }
         \Log::info('third_login_path_true',[date('Y-m-d H:i:s')]);
