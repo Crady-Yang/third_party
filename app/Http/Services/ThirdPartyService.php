@@ -150,6 +150,7 @@ class ThirdPartyService
      */
     public function thirdOauthRedirect(string $type, string $referer)
     {
+        $referer = $this->removeUrlParams($referer);
         /**
          * 第三方类型
          * 触发回调源地址白名单
@@ -178,7 +179,7 @@ class ThirdPartyService
             return true;
         }
 
-        if( in_array($url,$this->whiteUrlConfig) ){
+        if( in_array($url, $this->whiteUrlConfig) ){
             return true;
         }
         return false;
@@ -211,6 +212,7 @@ class ThirdPartyService
      */
     protected function twitterThird($referer)
     {
+        dd($referer);
         return Socialite::driver($this->oauth_type)->redirect($referer);
 //        $referer = array_get($_SERVER,'HTTP_REFERER','dd.default.com');//可将默认地址配置
 //        $params = http_build_query(['state'=>$referer]);
@@ -402,7 +404,7 @@ class ThirdPartyService
      * @param $url
      * @return string
      */
-    protected function formatHttpUrl($url)
+    public function formatHttpUrl($url)
     {
         $url_params = parse_url($url);
         if(!array_key_exists('scheme',$url_params)){
@@ -416,7 +418,7 @@ class ThirdPartyService
      * @param $url
      * @return string
      */
-    protected function removeUrlParams($url)
+    public function removeUrlParams($url)
     {
         if(strpos($url,'?')){
             return substr($url,0,strpos($url,'?'));

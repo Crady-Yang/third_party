@@ -16,11 +16,16 @@ class ThirdController extends Controller
     public function thirdLogin(Request $request, ThirdPartyService $partyService)
     {
         $type = $request->input('type');
-        $path = $request->input('path');
+//        $path = $request->input('path');
+        $path = $partyService->removeUrlParams(array_get($request->session()->get('_previous'),'url'));
+
         \Log::info('twitter-request-start',[date('Y-m-d H:i:s')]);
         // url白名单
         // type 验证
-
+        $return = $partyService->thirdOauthRedirect($type,$path);
+        if(!$return){
+            return redirect($partyService->formatHttpUrl($path).'?'.http_build_query(['auth_code'=>'101006001']));
+        }
         return $partyService->thirdOauthRedirect($type,$path);
     }
 
