@@ -77,6 +77,7 @@ class ThirdPartyService
      */
     protected function comfirmOauthType($type)
     {
+        \Log::info('comfirmOauthType',[$type,in_array($type,self::OAUTH_TYPE)]);
         if(!in_array($type,self::OAUTH_TYPE)){
             return false;
         }else{
@@ -174,8 +175,10 @@ class ThirdPartyService
      */
     protected function isWhiteUrl($url)
     {
+        $u = strtolower(env('APP_ENV','dev')) === 'production';
+        \Log::info('isWhiteUrl',[$u]);
         //开发环境 白名单不做验证
-        if( !strtolower(env('APP_ENV','dev')) === 'production' ){
+        if( ! strtolower(env('APP_ENV','dev')) === 'production' ){
             return true;
         }
 
