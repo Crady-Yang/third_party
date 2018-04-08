@@ -151,7 +151,7 @@ class ThirdPartyService
      */
     public function thirdOauthRedirect(string $type, string $referer)
     {
-        $referer = $this->removeUrlParams($referer);
+        $referer = $this->formatHttpUrl($this->removeUrlParams($referer));
         \Log::info('thirdOauthRedirect',[
             $type,
             $referer,
@@ -171,7 +171,7 @@ class ThirdPartyService
         ){
             return false;
         }else{
-            return call_user_func_array([$this,$type.'Third'],[$this->formatHttpUrl($referer)]);
+            return call_user_func_array([$this,$type.'Third'],[$referer]);
         }
     }
 
