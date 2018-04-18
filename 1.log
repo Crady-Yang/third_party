@@ -1,0 +1,15 @@
+{"id":3666,"file_name":"approvedInterview.html","variable":[["{{.name}}","{{.url}}"]]}
+{"id":2655,"file_name":"beforeInterview.html","variable":[["{{.name}}","{{.time}}","{{.url}}"]]}
+{"id":8053,"file_name":"changeInterview.html","variable":[["{{.name}}","{{.week}}","{{.time}}","{{.url}}"]]}
+{"id":4321,"file_name":"failInterview.html","variable":[["{{.name}}"]]}
+{"id":3522,"file_name":"interviewSuccess.html","variable":[["{{.name}}","{{.week}}","{{.time}}","{{.url}}"]]}
+{"id":5482,"file_name":"reverseInterviewSuccess.html","variable":[["{{.name}}","{{.week}}","{{.time}}"]]}
+{"id":9255,"file_name":"reverseInterviewSuccessAgain.html","variable":[["{{.name}}","{{.week}}","{{.time}}","{{.url}}"]]}
+{"id":4273,"file_name":"hunterFollow.html","variable":[["{{.name}}","{{.url}}"]]}
+{"id":8040,"file_name":"offer.html","variable":[["{{.name}}","{{.money}}"]]}
+{"id":4837,"file_name":"changePassword.html","variable":[["{{.name}}","{{.url}}"]]}
+{"id":2917,"file_name":"emailPassword.html","variable":[["{{.name}}","{{.email}}","{{.password}}","{{.url}}"]]}
+{"id":5811,"file_name":"forgetPassword.html","variable":[["{{.name}}","{{.email}}","{{.password}}","{{.url}}"]]}
+{"id":7698,"file_name":"approvedPersonalInfo.html","variable":[["{{.name}}","{{.url}}"]]}
+{"id":6596,"file_name":"failPersonal.html","variable":[["{{.name}}"]]}
+{"id":6070,"file_name":"personalInfo.html","variable":[["{{.name}}"]]}
