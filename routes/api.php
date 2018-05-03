@@ -13,6 +13,6 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
-});
+Route::any('create_email_tpl', 'Email\EmailController@createEmailTpl');
+Route::any('create_single_tpl', 'Email\EmailController@createSingleTpl');
+Route::any('replace_google_path', 'Email\EmailController@replaceGooglePath');

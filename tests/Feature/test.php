@@ -5,9 +5,8 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Redis;
 
-class redisTest extends TestCase
+class test extends TestCase
 {
     /**
      * A basic test example.
@@ -16,17 +15,13 @@ class redisTest extends TestCase
      */
     public function testExample()
     {
-        $this->test();
+        $a = [1,2,3];
+        $n = [2,3,4];
+        $rs1 = array_intersect($a,$n);
+        $rs2 = array_diff($a,$n);
+        $rs3 = array_diff($n,$a);
+        dd($rs3,$rs2);
         $this->assertTrue(true);
     }
-
-    public function test()
-    {
-        $data = [
-            '15021004529@163.com',
-            '139000@163.com',
-        ];
-//        Redis::set('keyas','name');
-//        Redis::setex('key',30,$data);
-    }
 }
+

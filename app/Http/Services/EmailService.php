@@ -3,6 +3,8 @@
 namespace App\Services;
 
 
+use App\Models\EmailTemplate;
+
 class EmailService
 {
 
@@ -35,6 +37,9 @@ class EmailService
      * @var string
      */
     protected $chan = 'mailgun';
+
+    //邮件模板类型
+    public $type;
 
     /**
      * 根路径
@@ -316,6 +321,7 @@ class EmailService
         foreach($fileList as $item){
             //获取文件名
             $file_name = basename($item);
+
             //获取文件内容，去除换行
             $file_content = str_replace(PHP_EOL, '', file_get_contents($item));
             //从文件中获取变量
@@ -337,6 +343,7 @@ class EmailService
 //            }
             //入库处理
             $this->saveMap($id['id'],$file_name,$variable);
+            $this->saveSql($id['id'],$file_name,['content'=>file_get_contents($item),'variable'=>$variable],$this->type);
         }
     }
 
@@ -386,5 +393,73 @@ class EmailService
         $str = json_encode($import,JSON_UNESCAPED_UNICODE).PHP_EOL;
         // id,文件名，映射变量
         \Log::info('gmail_tpl_'.$file_name,$import);
+    }
+
+    //保存模板入库
+    public function saveSql($id,$file_name,$varivable,$type)
+    {
+        $tplModel = new EmailTemplate();
+
+        $tplModel->type = $type;
+        $tplModel->name = $file_name;
+        $tplModel->tpl_id = $id;
+        $tplModel->variable = json_encode($varivable['variable'],JSON_UNESCAPED_UNICODE);
+        $tplModel->info = $varivable['content'];
+        return $tplModel->save();
+    }
+
+    public function updateHtml($fileList)
+    {
+        foreach($fileList as $item){
+            //获取文件名
+            $file_name = basename($item);
+            //获取文件内容
+            $file_content = file_get_contents($item);
+            //从文件中获取变量
+            $baseMatches = $this->getBase64($file_content);
+            if(empty($baseMatches)){
+                continue;
+            }
+            $newStr = $this->replaceStr($file_content,$baseMatches);
+            file_put_contents($item,$newStr);
+        }
+        return true;
+    }
+
+    public function getBase64($str)
+    {
+        $preg = '/\"data\:image\/png\;.*?\"{1}/';
+        preg_match_all($preg,$str,$matches);
+        return $matches[0];
+    }
+
+    public function replaceStr($str, $matches)
+    {
+        $title = '"https://drive.google.com/uc?export=view&id=';
+        $arr = [
+            $title . '1-ejZu2n4rJ8lWKaNnKKSvQC3Mhhzn-3P' . '"',
+            $title . '1voemrt0mm5g4XeXSUgT65fTohOcV-1Ya' . '"',
+            $title . '1TrmudC332xh9qE27kF7XS2t56hB8OzWO' . '"',
+            $title . '1qaX0bNZIDMJLwdVI0lR8YNkjrCow48sq' . '"',
+            $title . '1Qwr1wlrfFoeXbonl5Bx4Kmn6LaI7FkgH' . '"',
+            $title . '18xHvT766SZAJrPretVoS8WkPF3Tp6HB-' . '"',
+            $title . '1790yVzMhXNYwtrG_TYWSyy1OKvY9EXh2' . '"',
+            $title . '15KRUdCK-Smj_mbXnWidQ_Vh7aPJKRfDy' . '"',
+        ];
+
+        $newStr = str_replace($matches,$arr,$str);
+        return $newStr;
+    }
+
+    public function replaceUrl($str,$file_name)
+    {
+        $url = [
+            '<a style="text-decoration: none;color: #3A78EA;" href="{{.about_us}}">About us</a>',
+            '<a style="text-decoration: none;color: #3A78EA;" href="{{.contact_us}}">Contact us</a>',
+        ];
+
+        $newStr = str_replace(['About us','Contact us'],$url,$str);
+        file_put_contents($file_name,$newStr);
+        return $newStr;
     }
 }

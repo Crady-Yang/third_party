@@ -15,6 +15,11 @@ class pregTest extends TestCase
 {
     public function testBasicTest()
     {
+        $str = '1231231231<asd>asdas<213></123>das</asd>23123123';
+        $u = $this->t($str);
+        dd($u);
+        $this->test();
+        $this->pregReplace();dd(1);
         $u = $this->testPreg();
         dd($u);
         $path = '/Users/crady_yang/myProjects/php/third_party/public/emailProject/email';
@@ -111,5 +116,22 @@ class pregTest extends TestCase
 //        dd($array,$replace);
         $newStr = str_replace($array[0],$replace,$str);
         dd($newStr);
+    }
+
+    public function test()
+    {
+        $str = '12312312{{.host}}fad123{{.host123ew}}.';
+        $preg = '/\{{2}\.host\}{2}/';
+        $u = preg_replace($preg,'www.baidu.com',$str);
+//        $preg = '/\{{2}\.(?=[host]).*?\}{2}/';
+//        preg_match_all($preg,$str,$array);
+        dd($u);
+    }
+
+    public function t($content)
+    {
+        $preg = '/\<.*?\>.*?\<\/.*\>/';
+        preg_match($preg,$content,$matches);
+        return $matches;
     }
 }
