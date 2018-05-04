@@ -15,6 +15,9 @@ class test extends TestCase
      */
     public function testExample()
     {
+        $str = 'forgetPassword.html';
+        $u = substr($str,0,strpos($str,'.'));
+        dd($u);
         $a = [1,2,3];
         $n = [2,3,4];
         $rs1 = array_intersect($a,$n);

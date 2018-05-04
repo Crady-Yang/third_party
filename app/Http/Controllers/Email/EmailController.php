@@ -2,12 +2,44 @@
 
 namespace App\Http\Controllers\Email;
 
+use App\Models\EmailTemplate;
 use App\Services\EmailService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 class EmailController extends Controller
 {
+    public function sendEmail(Request $request, EmailService $service)
+    {
+        $name = $request->input('name');
+        $params = [
+            'tplData' => ['name'=>'wendy','password'=>'123456','money'=>'10RMB'],
+            'email' => $request->input('email'),
+        ];
+
+        $tplId = $service->getTemplateId($name,$params['email']);
+        $params['tplID'] = $tplId;
+        $rs = $service->send($params);
+        return response()->json(['msg'=>'ok']);
+    }
+
+    public function sendAllEmail(Request $request, EmailService $service)
+    {
+        $type = $request->input('type');
+        $params = [
+            'tplData' => ['name'=>'wendy','password'=>'123456','money'=>'10RMB'],
+            'email' => $request->input('email'),
+        ];
+        $tplIds = EmailTemplate::select(['name'])->where('type',$type)->get();
+        foreach($tplIds as $item){
+
+            $tplId = $service->getTemplateId(substr($item->name,0,strpos($item->name,'.')),$params['email']);
+            $params['tplID'] = $tplId;
+            $rs = $service->send($params);
+        }
+        return response()->json(['msg'=>'ok']);
+    }
+
     //
     public function createEmailTpl(Request $request, EmailService $service)
     {

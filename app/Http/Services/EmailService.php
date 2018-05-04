@@ -3,10 +3,21 @@
 namespace App\Services;
 
 
+use App\Models\EmailLog;
 use App\Models\EmailTemplate;
 
 class EmailService
 {
+    const EMAIL_URL = [
+        'offer' => 'https://data.dadaabc.com/teacher_site/48/cd/b9/11/48cdb9119d6495b0a66b13bec4868aa8.pdf',
+        'interviewSuccess' => 'https://data.dadaabc.com/dadaabc/teacher_site/7a/78/15/fa/7a7815fa4a243bbf85fd972b7a4c4699.pdf',
+        'reverseInterviewSuccess' => 'https://data.dadaabc.com/dadaabc/teacher_site/7a/78/15/fa/7a7815fa4a243bbf85fd972b7a4c4699.pdf'
+    ];
+
+    const MAIL_FOOT_URL = [
+        'contact_us' => 'https://test8-www.dadaabc.us/apps/teacher_landing/contact_us.html',
+        'about_us' => 'https://test8-www.dadaabc.us/teacher/landing/',
+    ];
 
     /**
      * 错误信息
@@ -30,7 +41,7 @@ class EmailService
      * 邮箱服务key
      * @var string
      */
-    protected $authKey = '13jCoTc:2YX2MdURUkwuR';
+    protected $authKey = '13jGrPt:7u6CvDsq6pSsG';
 
     /**
      * 邮件渠道
@@ -40,6 +51,9 @@ class EmailService
 
     //邮件模板类型
     public $type;
+
+    //邮件模板名
+    protected $tplName;
 
     /**
      * 根路径
@@ -144,7 +158,9 @@ class EmailService
     protected function sendRequest($params)
     {
         $postData = $this->buildMailBody($params);
-        $dataString = json_encode($postData,JSON_UNESCAPED_UNICODE);
+        $urlData = $this->checkReplaceUrl($postData);
+        $sendData = $this->addTemplateImg($urlData);
+        $dataString = json_encode($sendData,JSON_UNESCAPED_UNICODE);
         $res = $this->curlBasicAuth($this->sendEmailUrl(),$dataString,$this->authKey);
         if(!$res){
             //请求失败
@@ -155,8 +171,33 @@ class EmailService
             $this->error = 'EMAIL_REQUEST_FAILED';
             return false;
         }
+        $this->emailLog($sendData,$res['taskNum']);
         return $res['taskNum'];
     }
+
+    public function checkReplaceUrl($params)
+    {
+//        $configs = [
+//            'base64'=>config('dadaEmail.base64'),
+//            'gmail' =>config('dadaEmail.gmail')
+//        ];
+        $replaceTpl = ['offer','interviewSuccess','reverseInterviewSuccess'];
+        if( in_array($this->tplName,$replaceTpl) ){
+            $params['tplData']['url'] = self::EMAIL_URL[$this->tplName];
+        }
+
+        return $params;
+//        foreach($configs as  $emails){
+//            foreach($emails as $key => $item){
+//                if($item['id']==$params['tplID'] && in_array($key,$replaceTpl)){
+//                    $params['tplData']['url'] = self::EMAIL_URL[$key];
+//                    return $params;
+//                }
+//            }
+//        }
+//        return $params;
+    }
+
 
     /**
      * 发送邮件
@@ -241,9 +282,10 @@ class EmailService
         if ($output === false) {
             return false;
         }
+        $code = curl_getinfo($ch,CURLINFO_HTTP_CODE);
         curl_close($ch);
         $return = json_decode($output,true);
-        $return['http_code'] = curl_getinfo($ch,CURLINFO_HTTP_CODE);
+        $return['http_code'] = $code;
         return $return;
     }
 
@@ -263,9 +305,10 @@ class EmailService
         if ($output === false) {
             return false;
         }
+        $code = curl_getinfo($ch,CURLINFO_HTTP_CODE);
         curl_close($ch);
         $return = json_decode($output,true);
-        $return['http_code'] = curl_getinfo($ch,CURLINFO_HTTP_CODE);
+        $return['http_code'] = $code;
         return $return;
     }
 
@@ -277,14 +320,30 @@ class EmailService
      */
     public function getTemplateId($tplName,$email)
     {
-        $config = 'dadaEmail';
-        if($this->checkGmail($email)){
+        $this->tplName = $tplName;
+
+        $tpl = EmailTemplate::select(['tpl_id'])
+            ->where('type','all')
+            ->where('name',$tplName.'.html')
+            ->where('version','tst')
+            ->first();
+        if(!$tpl){
+            return 0;
+        }
+        return $tpl->tpl_id;
+    }
+
+    //添加模板图片
+    public function addTemplateImg($params)
+    {
+        if ($this->checkGmail($params['email'])) {
             $type = 'base64';
         }else{
             $type = 'gmail';
         }
-
-        return config($config . '.'. $type . '.' . $tplName . '.' . 'id');
+        $config = config('emailMap.'.$type);
+        $params['tplData'] = array_merge($params['tplData'],$config);
+        return $params;
     }
 
     /**
@@ -344,7 +403,7 @@ class EmailService
                 return false;
             }
             //入库处理
-            $this->saveMap($id['id'],$file_name,$variable);
+//            $this->saveMap($id['id'],$file_name,$variable);
             $this->saveSql($id['id'],$file_name,['content'=>file_get_contents($item),'variable'=>$variable],$this->type);
         }
         return true;
@@ -367,7 +426,7 @@ class EmailService
         curl_setopt($ch, CURLOPT_POST, TRUE);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 0);
-//        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 
         curl_setopt($ch,CURLOPT_POSTFIELDS,json_encode($params,JSON_UNESCAPED_UNICODE));
@@ -402,6 +461,7 @@ class EmailService
     //保存模板入库
     public function saveSql($id,$file_name,$varivable,$type)
     {
+//        dump(json_encode($varivable['variable'],JSON_UNESCAPED_UNICODE));
         $tplModel = new EmailTemplate();
 
         $tplModel->type = $type;
@@ -477,14 +537,14 @@ class EmailService
     public function replaceIdt($str,$matches)
     {
         $arr = [
-            '{{.topLogo}}',
-            '{{.itunesApple}}',
-            '{{.googlePlay}}',
-            '{{.youtubeImg}}',
-            '{{.twitterImg}}',
-            '{{.facebookImg}}',
-            '{{.linkedImg}}',
-            '{{.insImg}}',
+            '"{{.topLogo}}"',
+            '"{{.itunesApple}}"',
+            '"{{.googlePlay}}"',
+            '"{{.youtubeImg}}"',
+            '"{{.twitterImg}}"',
+            '"{{.facebookImg}}"',
+            '"{{.linkedImg}}"',
+            '"{{.insImg}}"',
         ];
         $newStr = str_replace($matches,$arr,$str);
         return $newStr;
@@ -500,5 +560,16 @@ class EmailService
         $newStr = str_replace(['About us','Contact us'],$url,$str);
         file_put_contents($file_name,$newStr);
         return $newStr;
+    }
+
+    public function emailLog($params,$taskNum)
+    {
+//        dd($params,$taskNum);
+        $log = new EmailLog();
+        $log->email = $params['email'];
+        $log->taskNum = $taskNum;
+        $log->tpl_id = $params['tplID'];
+        $log->params = json_encode($params,JSON_UNESCAPED_UNICODE);
+        $log->save();
     }
 }
