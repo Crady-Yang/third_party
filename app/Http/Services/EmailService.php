@@ -48,7 +48,7 @@ class EmailService
      */
     protected function baseUrl()
     {
-        return 'http://dadaabc.microserv';
+        return 'http://tst.dadaabc.microserv';
     }
 
     /**
@@ -336,15 +336,18 @@ class EmailService
             //send
             $id = $this->buildBody($params,$token);
             if($id===false){
-                \Log::info('gmail_tpl_failed_'.$file_name,['failed']);
+                $this->error = ['error'];
+                return false;
             }
-//            if($id['http_code']!=200){
-//                \Log::info('gmail_tpl_error_'.$file_name,$id);
-//            }
+            if($id['http_code']!=200){
+                $this->error = $id;
+                return false;
+            }
             //入库处理
             $this->saveMap($id['id'],$file_name,$variable);
             $this->saveSql($id['id'],$file_name,['content'=>file_get_contents($item),'variable'=>$variable],$this->type);
         }
+        return true;
     }
 
     //获取变量
@@ -364,7 +367,7 @@ class EmailService
         curl_setopt($ch, CURLOPT_POST, TRUE);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+//        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 
         curl_setopt($ch,CURLOPT_POSTFIELDS,json_encode($params,JSON_UNESCAPED_UNICODE));
@@ -376,9 +379,10 @@ class EmailService
         if ($output === false) {
             return false;
         }
+        $code = curl_getinfo($ch,CURLINFO_HTTP_CODE);
         curl_close($ch);
         $return = json_decode($output,true);
-//        $return['http_code'] = curl_getinfo($ch,CURLINFO_HTTP_CODE);
+        $return['http_code'] = $code;
         return $return;
     }
 
@@ -405,6 +409,7 @@ class EmailService
         $tplModel->tpl_id = $id;
         $tplModel->variable = json_encode($varivable['variable'],JSON_UNESCAPED_UNICODE);
         $tplModel->info = $varivable['content'];
+        $tplModel->version = 'v3';
         return $tplModel->save();
     }
 
@@ -421,6 +426,24 @@ class EmailService
                 continue;
             }
             $newStr = $this->replaceStr($file_content,$baseMatches);
+            file_put_contents($item,$newStr);
+        }
+        return true;
+    }
+
+    public function updateStrUrl($fileList)
+    {
+        foreach($fileList as $item){
+            //获取文件名
+            $file_name = basename($item);
+            //获取文件内容
+            $file_content = file_get_contents($item);
+            //从文件中获取变量
+            $baseMatches = $this->getBase64($file_content);
+            if(empty($baseMatches)){
+                continue;
+            }
+            $newStr = $this->replaceIdt($file_content,$baseMatches);
             file_put_contents($item,$newStr);
         }
         return true;
@@ -447,6 +470,22 @@ class EmailService
             $title . '15KRUdCK-Smj_mbXnWidQ_Vh7aPJKRfDy' . '"',
         ];
 
+        $newStr = str_replace($matches,$arr,$str);
+        return $newStr;
+    }
+
+    public function replaceIdt($str,$matches)
+    {
+        $arr = [
+            '{{.topLogo}}',
+            '{{.itunesApple}}',
+            '{{.googlePlay}}',
+            '{{.youtubeImg}}',
+            '{{.twitterImg}}',
+            '{{.facebookImg}}',
+            '{{.linkedImg}}',
+            '{{.insImg}}',
+        ];
         $newStr = str_replace($matches,$arr,$str);
         return $newStr;
     }

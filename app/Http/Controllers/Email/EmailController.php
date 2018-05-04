@@ -14,11 +14,13 @@ class EmailController extends Controller
         $type = $request->input('type');
         $path = $request->input('path');
 
-
         $list = $service->get_all_files($path);
         $service->type = $type;
         $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1X2lkIjoiNDY4IiwidV9taXgiOiJjcHRhMjE1NSIsInVfbmFtZSI6InNwZW5jZXIiLCJ1X3RpbWUiOjE1MjMxNTE1NzZ9.T_pQRk2kWhPk7bfxL_GXx6ZKr2E0CYMXR6SotQpB9nw';
-        $service->sendTemplate($list,$token,$type);
+        $rs = $service->sendTemplate($list,$token,$type);
+        if(!$rs){
+            return response()->json($service->getError());
+        }
         return response()->json(['msg'=>'ok']);
     }
 
@@ -56,6 +58,25 @@ class EmailController extends Controller
         }
 
         $rs = $service->updateHtml($list);
+        dd(1);
+    }
+
+    //
+
+    //替换模板地址
+    public function replaceStrUrl(Request $request, EmailService $service)
+    {
+        $path = $request->input('path');//文件
+
+        $list = $service->get_all_files($path);
+
+        foreach($list as $file){
+            if( !file_exists($file) ){
+                return response()->json(['msg'=>'file_error']);
+            }
+        }
+
+        $rs = $service->updateStrUrl($list);
         dd(1);
     }
 
